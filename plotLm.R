@@ -2,10 +2,16 @@ library(scales)
 library(ggplot2)
 library(data.table)
 library(dplyr)
+library(gridExtra)
+source('multiplot.R')
 
 by1var = function(oldLm, var) {
   #toString(substitute(var))
-  varName = dputToString(substitute(var))
+  #varName = dputToString(substitute(var))
+  ##fix error handling here
+  #if (typeof(substitute(var)) != "character") {varName = dputToString(substitute(var))}
+  #else {varName = var}
+  varName = var
   outcomeVar = attributes(terms(formula(oldLm)))$variables[2]
   varAsFormula = reformulate(termlabels=varName,intercept=FALSE)
   
@@ -32,21 +38,24 @@ by1var = function(oldLm, var) {
   print(newLm$coef)
   print(head(bothData))
   print(dim(subset(bothData,tp_ == "raw")))
-  gcall = quote(ggplot(data=bothData, aes_string(y=toString(outcomeVar),x=varName ))+
-                  geom_point(data=subset(bothData,tp_ == "raw"),alpha=0.2)+
-                  geom_point(color="red", data=subset(bothData,tp_ == "adj"))+
-                  geom_line(aes(group=gp_), alpha=0.1)+
-                  geom_smooth(method=lm,data=subset(bothData,tp_ == "adj"), color="red")+
-                  geom_smooth(data=subset(bothData,tp_ == "adj"), color = alpha("red",0.2),alpha=0.2)+
-                  geom_rug(aes(y=residOfFull),data=subset(bothData,tp_ == "adj"),col=rgb(.5,0,0,alpha=.2))
-                )
+
+  p <- ggplot(data=bothData, aes_string(y=toString(outcomeVar),x=varName ))+
+    geom_point(data=subset(bothData,tp_ == "raw"),alpha=0.3)+
+    geom_point(color="red", data=subset(bothData,tp_ == "adj"))+
+    geom_line(aes(group=gp_), alpha=0.3)+
+    geom_smooth(method=lm,data=subset(bothData,tp_ == "adj"), color="red", fill='red', alpha=.3, se=F)+
+    geom_smooth(data=subset(bothData,tp_ == "adj"), size=0, fill = 'blue', color = 'blue', alpha=.2, se=T)+
+    geom_rug(aes(y=residOfFull),data=subset(bothData,tp_ == "adj"),col=rgb(.5,0,0,alpha=.2)) + 
+    theme_bw()
+  gcall = quote(p)
   
   #lastcall = eval(bquote(substitute(.(gcall),list(RESPONSE=attributes(terms(formula(oldLm)))$variables[[2]],
   #                                          RESID=quote(newLm$resid))
   #                            )))
   print(gcall)
   eval(gcall)
-}
+  return(p)
+  }
 
 dputToString <- function (obj) {
   con <- textConnection(NULL,open="w")
@@ -61,3 +70,31 @@ dputToString <- function (obj) {
               termlabels=do.call(setdiff, lapply(.terms, attr, which = 'term.labels')),
               intercept=!attributes(.terms[[2]])$intercept)
 }
+
+by1var.seq <- function(l) {
+    p.list <- list()
+    vars <- names(l$coefficients)[2:length(names(l$coefficients))]
+    for (i in 1:length(vars)) { p <- by1var(l, vars[i])
+      p.list[[i]] <- p}
+    multiplot(plotlist=p.list, cols = 2)}
+
+
+#tests
+
+y <- rnorm(100, 10, 1)
+x <- exp(y) + rnorm(100, 0, .5)
+z <- y + rnorm(100, 5, .5)
+w <- z + rnorm(100, 1, 1)
+
+l <- lm(y ~ x + z + w)
+by1var(l, "x")
+by1var(l, "z")
+
+
+pdf("test.pdf")
+by1var.seq(l)
+dev.off()
+
+l <- lm(mpg ~ wt + hp, data=mtcars)
+by1var(l, "wt")
+
