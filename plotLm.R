@@ -1,6 +1,7 @@
 library(scales)
 library(ggplot2)
-library(data.frame)
+library(data.table)
+library(dplyr)
 
 by1var = function(oldLm, var) {
   #toString(substitute(var))
@@ -14,7 +15,7 @@ by1var = function(oldLm, var) {
   #data=cbind(oldLm$model,newLm$resid)
   d1 = data.table(oldLm$model)
   #data
-  adjustment = sum(newLm$coef * c(1, sapply(newLm$model[,2:dim(newLm$model)[2]],mean)))
+  adjustment = sum(newLm$coef * c(1, colMeans(newLm$model)[2:dim(newLm$model)[2]]))
   adjResid = newLm$resid + adjustment
   d2 = data.table(d1[,c("gp_","tp_"):=list(1:dim(d1)[1],"raw")])
   d2 = d2[,c(toString(outcomeVar),"tp_"):=list(adjResid,"adj")]
@@ -26,6 +27,9 @@ by1var = function(oldLm, var) {
   print(names(bothData))
   print(newLm$coef)
   print(c(1, sapply(newLm$model[,2:dim(newLm$model)[2]],mean)))
+  print(adjustment)
+  print(sapply(newLm$model[,2:dim(newLm$model)[2]],mean))
+  print(newLm$coef)
   print(head(bothData))
   print(dim(subset(bothData,tp_ == "raw")))
   gcall = quote(ggplot(data=bothData, aes_string(y=toString(outcomeVar),x=varName ))+
