@@ -1,0 +1,22 @@
+---
+title: "plotLm Vignette"
+author: "Jameson Quinn and Kyle Mahowald"
+date: "April 19, 2015"
+output: html_document
+---
+
+```{r, include=F}
+source('plotLm.R')
+```
+
+
+
+```{r}
+d <- read.csv('rts.csv')
+d$AgeSubjectNum <- as.numeric(d$AgeSubject)
+d$RTlexdec.e = exp(d$RTlexdec)
+l <- lm(RTlexdec.e ~ AgeSubject + WrittenFrequency + LengthInLetters + Familiarity, data=d)
+by1var.seq(l, thin.val=.2)
+```
+
+
