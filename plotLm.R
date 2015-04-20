@@ -5,56 +5,61 @@ library(gridExtra)
 library(dplyr)
 source('multiplot.R')
 
-by1var = function(oldLm, var, thin=1) {
-  #toString(substitute(var))
-  #varName = dputToString(substitute(var))
-  ##fix error handling here
-  #if (typeof(substitute(var)) != "character") {varName = dputToString(substitute(var))}
-  #else {varName = var}
-  varName = var
+by1var = function(oldLm, var, thin=1, breakupby=FALSE) {
+
+  varName <- var
+  print(varName)
   outcomeVar = attributes(terms(formula(oldLm)))$variables[2]
   varAsFormula = reformulate(termlabels=varName,intercept=FALSE)
-  
+  if (varName == breakupby) {breakupby=FALSE}
   #find if varName is a factor
-  print(varName)
-  print(head(oldLm$model))
   if (typeof(oldLm$model[, varName]) == "integer") {isfactor = TRUE} else {isfactor = FALSE}
   
-  #turn the irrelevant factors to 0
-  for (j in 1:ncol(oldLm$model)) {
-    if (typeof(oldLm$model[, j]) == 'integer' & length(unique(oldLm$model[, j])) < 8 & names(oldLm$model)[j] != varName) {
-      oldLm$model[, j] = 0
-    }
-  }
+  cat.variables.old = find.cat.variables(oldLm, varName)
   
   newLm = lm(formula(oldLm) - varAsFormula, data=oldLm$model)
-  
-  #if categorical, group by it. if not, take the mean
-  
-  #newLm
-  #data=cbind(oldLm$model,newLm$resid)
-  d1 = data.table(oldLm$model)
-  #data
-  #print(newLm$model[, 3:dim(newLm$model)[2]])
-  new.coef.minus.0 = newLm$coef
-  new.coef.minus.0[is.na(new.coef.minus.0)] = 0
-  adjustment = sum(new.coef.minus.0 * c(1, colMeans(as.matrix(newLm$model[,2:dim(newLm$model)[2]]))))
-  adjResid = newLm$resid + adjustment
-  d2 = data.table(d1[,c("gp_","tp_"):=list(1:dim(d1)[1],"raw")])
-  d2 = d2[,c(toString(outcomeVar),"tp_"):=list(adjResid,"adj")]
+  cat.variables.new = find.cat.variables(newLm, varName)
+
+  d1 = oldLm$model
+
+  new.data = dplyr::select(newLm$model, which(cat.variables.new == T)) %>% mutate_each(funs(mean))
+  if (breakupby != FALSE & breakupby %in% names(newLm$model)) {new.data2 = data.frame(newLm$model[, breakupby])
+                                                               names(new.data2) = breakupby
+                                                              new.data = cbind(new.data, new.data2)}
+  if (length(which(cat.variables.new == F & names(newLm$model) != breakupby )) > 0) {new.data3 = dplyr::select(newLm$model, which(cat.variables.new == F & names(newLm$model) != breakupby )) 
+  new.data3[T] = 0 
+  new.data = cbind(new.data, new.data3) }
+  new.data[, varName] <- d1[, varName]
+  d2 = new.data
+  d2[, toString(outcomeVar)] = fitted(newLm, newdata=new.data)
+  d2$tp_ = 'adj'
+  d1$tp_ = 'raw'
+  d1$gp_ = 1:nrow(d1)
+  d2$gp_ = 1:nrow(d2)
+  #d2$tp_ = "raw" #
+  #d1$tp_ = 'adj'
   bothData = rbind(d1,d2)
-  bothData = bothData[,residOfFull:=oldLm$resid + adjustment]
+  bothData$residOfFull = predict(oldLm) #oldLm$resid + adjustment # = bothData[,residOfFull:=oldLm$resid + adjustment]
   
-  print(outcomeVar)
-  print(varName)
-  print(names(bothData))
-  print(newLm$coef)
-  print(c(1, sapply(newLm$model[,2:dim(newLm$model)[2]],mean)))
-  print(head(bothData))
-  print(dim(subset(bothData,tp_ == "raw")))
-  
+  #print(outcomeVar)
+  #print(varName)
+  #print(names(bothData))
+  #print(newLm$coef)
+  #print(c(1, sapply(newLm$model[,2:dim(newLm$model)[2]],mean)))
+  #print(head(bothData))
+  #print(dim(subset(bothData,tp_ == "raw")))
+  sampled.data = sample(1:nrow(bothData), round(thin * nrow(bothData)) )
   bothData = data.frame(bothData)
-  if (isfactor == FALSE) {  sampled.data = sample(1:nrow(bothData), round(thin * nrow(bothData)) )
+  
+  title.vars = new.data[1, names(newLm$model)]
+  title.vars = title.vars[names(title.vars) %in% breakupby == F & names(title.vars) != toString(outcomeVar)]
+  title.val = "holding constant...\n"
+  for (i in 1:length(title.vars)) {
+    title.val = paste(title.val, names(title.vars[i]), ": ", round(title.vars[i], 2), "\n", sep="")
+  }
+  
+  if (breakupby == FALSE) {bothData[, 'breakupby'] = 1} else {bothData[, 'breakupby'] = bothData[, breakupby]}
+  if (isfactor == FALSE) {  
                             p <- ggplot(data=bothData[sampled.data, ], aes_string(y=toString(outcomeVar),x=varName ))+
                               geom_point(data=subset(bothData[sampled.data, ],tp_ == "raw"),alpha=0.3)+
                               geom_point(color="red", data=subset(bothData[sampled.data, ],tp_ == "adj")) + 
@@ -62,16 +67,15 @@ by1var = function(oldLm, var, thin=1) {
                               geom_smooth(method=lm,data=subset(bothData,tp_ == "adj"), color="red", fill='red', alpha=.3, se=F)+
                               geom_smooth(data=subset(bothData,tp_ == "adj"), size=0, fill = 'blue', color = 'blue', alpha=.2, se=T)+
                               geom_rug(aes(y=residOfFull),data=subset(bothData,tp_ == "adj"),col=rgb(.5,0,0,alpha=.2)) + 
-                              theme_bw()}
-  
-  else { bothData[, varName] = as.factor(bothData[, varName])
-         p <- ggplot(data=sample_n(bothData, round(thin * nrow(bothData))), aes_string(y=toString(outcomeVar),x=varName ))+
+                              theme_bw() + facet_grid(. ~ breakupby) + ggtitle(title.val) + theme(plot.title = element_text(size=10, hjust=1))}  else { 
+                                bothData[, varName] = as.factor(bothData[, varName])
+                              p <- ggplot(data=bothData[sampled.data, ], aes_string(y=toString(outcomeVar),x=varName ))+
            geom_boxplot(data=subset(bothData,tp_ == "raw"),alpha=0.3)+
            geom_boxplot(color="red", data=subset(bothData,tp_ == "adj")) + geom_line(aes(group=gp_), alpha=0.3)+
            #geom_smooth(method=lm,data=subset(bothData,tp_ == "adj"), color="red", fill='red', alpha=.3, se=F)+
            #geom_smooth(data=subset(bothData,tp_ == "adj"), size=0, fill = 'blue', color = 'blue', alpha=.2, se=T)+
            geom_rug(aes(y=residOfFull),data=subset(bothData,tp_ == "adj"),col=rgb(.5,0,0,alpha=.2)) + 
-           theme_bw()
+           theme_bw() + facet_grid(. ~ breakupby) + ggtitle(title.val) + theme(plot.title = element_text(size=10, hjust=1))
   }
   
   
@@ -99,10 +103,23 @@ dputToString <- function (obj) {
               intercept=!attributes(.terms[[2]])$intercept)
 }
 
-by1var.seq <- function(l, thin.val=1) {
+makeNumeric <- function(x) {as.numeric(as.factor(x))}
+
+find.cat.variables <- function(oldLm, varName) {
+  #get 0's for categorical variables
+  cat.variables = rep(1, ncol(oldLm$model))
+  for (j in 1:ncol(oldLm$model)) {
+    if (typeof(oldLm$model[, j]) == 'integer' & length(unique(oldLm$model[, j])) < 8 & names(oldLm$model)[j] != varName) {
+      cat.variables[j] = 0
+    }
+  }
+  return(cat.variables)
+}
+
+by1var.seq <- function(l, thin.val=1, bub=FALSE) {
   p.list <- list()
   vars <- names(l$model)[2:length(names(l$coefficients))]
-  for (i in 1:length(vars)) { p <- by1var(l, vars[i], thin=thin.val)
+  for (i in 1:length(vars)) { p <- by1var(l, vars[i], thin=thin.val, breakupby=bub)
                               p.list[[i]] <- p}
   multiplot(plotlist=p.list, cols = 2)}
 
@@ -126,3 +143,8 @@ dev.off()
 l <- lm(mpg ~ wt + hp, data=mtcars)
 by1var(l, "wt")
 
+d <- read.csv('rts.csv')
+d$AgeSubjectNum <- as.numeric(d$AgeSubject)
+d$RTnaming.e = exp(d$RTnaming)
+l <- lm(RTnaming.e ~ AgeSubject + WrittenFrequency + LengthInLetters + Familiarity, data=d)
+by1var.seq(l, thin.val=.1, bub='AgeSubject')

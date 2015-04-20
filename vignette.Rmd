@@ -11,12 +11,15 @@ source('plotLm.R')
 
 
 
-```{r}
+```{r, fig.height=10, fig.width=10, warning=F, message=F}
 d <- read.csv('rts.csv')
 d$AgeSubjectNum <- as.numeric(d$AgeSubject)
 d$RTlexdec.e = exp(d$RTlexdec)
-l <- lm(RTlexdec.e ~ AgeSubject + WrittenFrequency + LengthInLetters + Familiarity, data=d)
-by1var.seq(l, thin.val=.2)
+#d$LengthInLetters <- scale(d$LengthInLetters)[, 1]
+l <- lm(RTnaming ~ AgeSubject + WrittenFrequency + LengthInLetters + Familiarity, data=d)
+by1var.seq(l, thin.val=.2, bub='AgeSubject')
+by1var.seq(l, thin.val=.2, bub='LengthInLetters')
+
 ```
 
 
