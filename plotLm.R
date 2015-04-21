@@ -3,6 +3,7 @@ library(ggplot2)
 library(data.table)
 library(gridExtra)
 library(dplyr)
+library(mvtnorm)
 source('multiplot.R')
 
 by1var = function(oldLm, var, thin=1, breakupby=FALSE) {
@@ -136,6 +137,11 @@ y <- rnorm(100, 10, 1)
 x <- exp(y) + rnorm(100, 0, .5)
 z <- y + rnorm(100, 5, .5)
 w <- z + rnorm(100, 1, 1)
+
+x <- data.frame(rmvnorm(100, c(0, 0, 1), diag(3) + matrix(.2, 3, 3)))
+y <- x$X1 + x$X2 + x$X3^2
+l <- lm(y ~ X1 + X2 + X3, data=x)
+by1var.seq(l)
 
 l <- lm(y ~  x + z + w)
 by1var(l, "x", thin=1)
