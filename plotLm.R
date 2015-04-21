@@ -20,18 +20,24 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE) {
   newLm = lm(formula(oldLm) - varAsFormula, data=oldLm$model)
   cat.variables.new = find.cat.variables(newLm, varName)
 
-  d1 = oldLm$model
+  d1 = data.table(oldLm$model)
 
   new.data = dplyr::select(newLm$model, which(cat.variables.new == T)) %>% mutate_each(funs(mean))
   if (breakupby != FALSE & breakupby %in% names(newLm$model)) {new.data2 = data.frame(newLm$model[, breakupby])
                                                                names(new.data2) = breakupby
                                                               new.data = cbind(new.data, new.data2)}
-  if (length(which(cat.variables.new == F & names(newLm$model) != breakupby )) > 0) {new.data3 = dplyr::select(newLm$model, which(cat.variables.new == F & names(newLm$model) != breakupby )) 
-  new.data3[T] = 0 
-  new.data = cbind(new.data, new.data3) }
-  new.data[, varName] <- d1[, varName]
+  if (length(which(cat.variables.new == F & names(newLm$model) != breakupby & names(newLm$model) != varName )) > 0) {
+      new.data3 = dplyr::select(newLm$model, which(cat.variables.new == F & names(newLm$model) != breakupby & names(newLm$model) != varName )) 
+      new.data3[T] = 0 
+      new.data = cbind(new.data, new.data3) 
+  }
+  new.data[, varName] <-d1[, eval(as.symbol(varName))]
+  print(head(new.data))
   d2 = new.data
-  d2[, toString(outcomeVar)] = fitted(newLm, newdata=new.data)
+  if (breakupby != FALSE) {d1[ ,means_:=mean(eval(as.symbol(toString(outcomeVar)))), by=eval(as.symbol(breakupby))]} else {
+    d1[ ,means_:=mean(eval(as.symbol(toString(outcomeVar))))]}
+  d2[, toString(outcomeVar)] = c(d1[, eval(as.symbol(toString(outcomeVar)))+means_]) - fitted(newLm, newdata=new.data)   #residuals for new
+  d1[,means_:=NULL]
   d2$tp_ = 'adj'
   d1$tp_ = 'raw'
   d1$gp_ = 1:nrow(d1)
@@ -132,8 +138,14 @@ z <- y + rnorm(100, 5, .5)
 w <- z + rnorm(100, 1, 1)
 
 l <- lm(y ~  x + z + w)
-by1var(l, "x", thin=.3)
+by1var(l, "x", thin=1)
 by1var(l, "z")
+
+y <- rnorm(100, 10, 1)
+x <- exp(y) + rnorm(100, 1, 1)
+z <- rnorm(100, 1, 1)
+l <- lm(y ~ x + z)
+by1var.seq(l)
 
 
 pdf("test.pdf")
