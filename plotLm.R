@@ -7,7 +7,20 @@ library(dplyr)
 library(mvtnorm)
 source('multiplot.R')
 
-by1var = function(oldLm, var, thin=1, breakupby=FALSE) {
+call.with = function(f,fixedArgs,varArgs,elseResult=geom_blank()) {
+  if (!is.null(varArgs)) {
+    return(do.call(f,c(fixedArgs,varArgs)))
+  }
+  return(elseResult)
+}
+
+by1var = function(oldLm, var, thin=1, breakupby=FALSE, 
+                  adjustedData=list(color="red"), rawData=list(alpha=0.3),
+                  connections=list(alpha=0.3), 
+                  loess=list(size=0, fill = 'blue', color = 'blue', alpha=.2, se=T),
+                  line=list(color="red", fill='red', alpha=.3, se=F),
+                  rug=list(col=rgb(.5,0,0,alpha=.2))
+                  ) {
 
   varName <- var
   print(varName)
@@ -68,20 +81,25 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE) {
   
   if (breakupby == FALSE) {bothData[, 'breakupby'] = 1} else {bothData[, 'breakupby'] = bothData[, breakupby]}
   if (isfactor == FALSE) {  
-                            p <- ggplot(data=bothData[sampled.data, ], aes_string(y=toString(outcomeVar),x=varName ))+
-                              geom_point(data=subset(bothData[sampled.data, ],tp_ == "raw"),alpha=0.3)+
-                              geom_point(color="red", data=subset(bothData[sampled.data, ],tp_ == "adj")) + 
-                              geom_line(aes(group=gp_), alpha=0.3)+
-                              geom_smooth(method=lm,data=subset(bothData,tp_ == "adj"), color="red", fill='red', alpha=.3, se=F)+
-                              geom_smooth(data=subset(bothData,tp_ == "adj"), size=0, fill = 'blue', color = 'blue', alpha=.2, se=T)+
-                              geom_rug(aes(y=residOfFull),data=subset(bothData,tp_ == "adj"),col=rgb(.5,0,0,alpha=.2)) + 
-                              theme_bw() + facet_grid(. ~ breakupby) + ggtitle(title.val) + theme(plot.title = element_text(size=10, hjust=1))}  else { 
-                                bothData[, varName] = as.factor(bothData[, varName])
-                              p <- ggplot(data=bothData[sampled.data, ], aes_string(y=toString(outcomeVar),x=varName ))+
-           geom_boxplot(data=subset(bothData,tp_ == "raw"),alpha=0.3)+
+     p <- ggplot(data=bothData[sampled.data, ], aes_string(y=toString(outcomeVar),x=varName ))+
+          call.with(geom_point,
+                    list(data=subset(bothData[sampled.data, ],tp_ == "raw")), rawData)+
+          call.with(geom_point, 
+                    list(data=subset(bothData[sampled.data, ],tp_ == "adj")), adjustedData) + 
+          call.with(geom_line,list(aes(group=gp_)), connections)+
+          call.with(geom_smooth,
+                    list(method=lm,data=subset(bothData,tp_ == "adj")), line)+
+          call.with(geom_smooth,
+                    list(method=loess,data=subset(bothData,tp_ == "adj")), loess)+
+          geom_rug(aes(y=residOfFull),data=subset(bothData,tp_ == "adj"),col=rgb(.5,0,0,alpha=.2)) + 
+          theme_bw() + facet_grid(. ~ breakupby) + ggtitle(title.val) + theme(plot.title = element_text(size=10, hjust=1))
+  }  else { 
+      bothData[, varName] = as.factor(bothData[, varName])
+      p <- ggplot(data=bothData[sampled.data, ], aes_string(y=toString(outcomeVar),x=varName ))+
+           call.with(geom_boxplot,list(data=subset(bothData,tp_ == "raw")),adjustedData)+
            geom_boxplot(color="red", data=subset(bothData,tp_ == "adj")) + geom_line(aes(group=gp_), alpha=0.3)+
-           #geom_smooth(method=lm,data=subset(bothData,tp_ == "adj"), color="red", fill='red', alpha=.3, se=F)+
-           #geom_smooth(data=subset(bothData,tp_ == "adj"), size=0, fill = 'blue', color = 'blue', alpha=.2, se=T)+
+           geom_smooth(method=lm,data=subset(bothData,tp_ == "adj"), color="red", fill='red', alpha=.3, se=F)+
+           geom_smooth(data=subset(bothData,tp_ == "adj"), size=0, fill = 'blue', color = 'blue', alpha=.2, se=T)+
            geom_rug(aes(y=residOfFull),data=subset(bothData,tp_ == "adj"),col=rgb(.5,0,0,alpha=.2)) + 
            theme_bw() + facet_grid(. ~ breakupby) + ggtitle(title.val) + theme(plot.title = element_text(size=10, hjust=1))
   }
@@ -144,9 +162,8 @@ y <- x$X1 + x$X2 + x$X3^2
 l <- lm(y ~ X1 + X2 + X3, data=x)
 by1var.seq(l)
 
-l <- lm(y ~  x + z + w)
-by1var(l, "x", thin=1)
-by1var(l, "z")
+by1var(l, "X1", thin=1)
+by1var(l, "X3")
 
 y <- rnorm(100, 10, 1)
 x <- exp(y) + rnorm(100, 1, 1)
