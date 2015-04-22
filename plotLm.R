@@ -35,7 +35,7 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
   
   
   varName <- var
-  #print(varName)
+  print(varName)
   outcomeVar = attributes(terms(formula(oldLm)))$variables[2]
   varAsFormula = reformulate(termlabels=varName,intercept=FALSE)
   if (varName == breakupby) {breakupby=FALSE}
@@ -87,7 +87,7 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
   
   title.vars = new.data[1, names(newLm$model)]
   title.vars = title.vars[names(title.vars) %in% breakupby == F & names(title.vars) != toString(outcomeVar)]
-  title.val = "Linear adjustment to values...\n"
+  title.val = "holding constant...\n"
   for (i in 1:length(title.vars)) {
     title.val = paste(title.val, names(title.vars[i]), ": ", round(title.vars[i], 2), "\n", sep="")
   }
@@ -174,7 +174,7 @@ if (dotests) {
   plot(l)
   by1var.seq(l)
   
-  by1var(l, "X1", thin=1)
+  by1var(l, "X1", thin=.5)
   by1var(l, "X3")
   
   y <- rnorm(100, 10, 1)
@@ -192,21 +192,24 @@ if (dotests) {
   x <- rnorm(n)
   y <- x + rnorm(n)
   xy <- data.frame(cbind(x, y))
-  xy$z <- rep(0, n)
+  xy$z <- rnorm(n)
   with(xy, plot(x, y))
   l <- lm(y ~ 1 + x + z, data=xy)
+  by1var(l, 'x') #(l, 'x', 'z')
   by1var(l, 'x') #(l, 'x', 'z')
   
   l <- lm(mpg ~ wt + hp, data=mtcars)
   by1var(l, "wt")
   
   d <- read.csv('rts.csv')
+  d$LengthInLetters <- as.numeric(d$LengthInLetters)
   d$AgeSubjectNum <- as.numeric(d$AgeSubject)
   d$RTnaming.e = exp(d$RTnaming)
   d$WrittenFrequency.e <- exp(d$WrittenFrequency)
   l <- lm(RTnaming.e ~ AgeSubject + WrittenFrequency.e + LengthInLetters , data=filter(d, WrittenFrequency.e < 50000))
   l <- lm(RTnaming.e ~ AgeSubject + WrittenFrequency + LengthInLetters , data=filter(d, WrittenFrequency.e < 50000))
   l <- lm(RTnaming ~ AgeSubject + WrittenFrequency + LengthInLetters , data=filter(d, WrittenFrequency.e < 50000))
+  l <- lm(RTnaming ~ AgeSubject + WrittenFrequency + WrittenSpokenFrequencyRatio , data=filter(d, WrittenFrequency.e < 50000))
   
-  by1var.seq(l, thin=.1, breakupby='AgeSubject')
+  by1var.seq(l, thin=.02, breakupby='AgeSubject')
 }
