@@ -7,6 +7,8 @@ library(dplyr)
 library(mvtnorm)
 source('multiplot.R')
 
+dotests = F
+
 call.with = function(f,fixedArgs,varArgs,elseResult=geom_blank()) {
   if (!is.null(varArgs)) {
     return(do.call(f,c(fixedArgs,varArgs)))
@@ -15,13 +17,23 @@ call.with = function(f,fixedArgs,varArgs,elseResult=geom_blank()) {
 }
 
 by1var = function(oldLm, var, thin=1, breakupby=FALSE, 
-                  adjustedData=list(color="red"), rawData=list(alpha=0.3),
-                  connections=list(alpha=0.3), 
-                  loess=list(size=0, fill = 'blue', color = 'blue', alpha=.2, se=T),
-                  line=list(color="red", fill='red', alpha=.3, se=F),
-                  rug=list(col=rgb(.5,0,0,alpha=.2))
+                  adjustedData=F, 
+                  rawData=F,
+                  connections=F, 
+                  loess=F,
+                  line=F,
+                  rug=F
                   ) {
-
+  
+  #set up defaults
+  if (identical(FALSE,adjustedData)) adjustedData=list(color="red")
+  if (identical(FALSE,rawData)) rawData=list(alpha=0.3)
+  if (identical(FALSE,connections)) connections=list(alpha=0.3) 
+  if (identical(FALSE,loess)) loess=list(size=0, fill = 'blue', color = 'blue', alpha=.2, se=T)
+  if (identical(FALSE,line)) line=list(color="red", fill='red', alpha=.3, se=F)
+  if (identical(FALSE,rug)) rug=list(col=rgb(.5,0,0,alpha=.2))
+  
+  
   varName <- var
   print(varName)
   outcomeVar = attributes(terms(formula(oldLm)))$variables[2]
@@ -47,7 +59,6 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
       new.data = cbind(new.data, new.data3) 
   }
   new.data[, varName] <-d1[, eval(as.symbol(varName))]
-  print(head(new.data))
   d2 = new.data
   if (breakupby != FALSE) {d1[ ,means_:=mean(eval(as.symbol(toString(outcomeVar)))), by=eval(as.symbol(breakupby))]} else {
     d1[ ,means_:=mean(eval(as.symbol(toString(outcomeVar))))]}
@@ -59,7 +70,7 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
   d2$gp_ = 1:nrow(d2)
   #d2$tp_ = "raw" #
   #d1$tp_ = 'adj'
-  bothData = rbind(d1,d2)
+  bothData = rbind(d1,d2,use.names=TRUE) #I have no idea why we have to say use.names=TRUE. Cols are same order but it whines without this.
   bothData$residOfFull = predict(oldLm) #oldLm$resid + adjustment # = bothData[,residOfFull:=oldLm$resid + adjustment]
   
   #print(outcomeVar)
@@ -90,8 +101,8 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
           call.with(geom_smooth,
                     list(method=lm,data=subset(bothData,tp_ == "adj")), line)+
           call.with(geom_smooth,
-                    list(method=loess,data=subset(bothData,tp_ == "adj")), loess)+
-          geom_rug(aes(y=residOfFull),data=subset(bothData,tp_ == "adj"),col=rgb(.5,0,0,alpha=.2)) + 
+                    list(method="loess",data=subset(bothData,tp_ == "adj")), loess)+
+          call.with(geom_rug,list(aes(y=residOfFull),data=subset(bothData,tp_ == "adj")),rug) + 
           theme_bw() + facet_grid(. ~ breakupby) + ggtitle(title.val) + theme(plot.title = element_text(size=10, hjust=1))
   }  else { 
       bothData[, varName] = as.factor(bothData[, varName])
@@ -105,13 +116,10 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
   }
   
   
-  gcall = quote(p)
   
   #lastcall = eval(bquote(substitute(.(gcall),list(RESPONSE=attributes(terms(formula(oldLm)))$variables[[2]],
   #                                          RESID=quote(newLm$resid))
   #                            )))
-  print(gcall)
-  eval(gcall)
   return(p)
 }
 
@@ -142,45 +150,43 @@ find.cat.variables <- function(oldLm, varName) {
   return(cat.variables)
 }
 
-by1var.seq <- function(l, thin.val=1, bub=FALSE) {
+by1var.seq <- function(l, ...) {
   p.list <- list()
-  vars <- names(l$model)[2:length(names(l$coefficients))]
-  for (i in 1:length(vars)) { p <- by1var(l, vars[i], thin=thin.val, breakupby=bub)
+  vars <- names(l$model)[2:length(names(l$model))]
+  for (i in 1:length(vars)) { p <- by1var(l, vars[i], ...)
                               p.list[[i]] <- p}
-  multiplot(plotlist=p.list, cols = 2)}
+  multiplot(plotlist=p.list, cols = 2)
+}
 
 
 #tests
-
-y <- rnorm(100, 10, 1)
-x <- exp(y) + rnorm(100, 0, .5)
-z <- y + rnorm(100, 5, .5)
-w <- z + rnorm(100, 1, 1)
-
-x <- data.frame(rmvnorm(100, c(0, 0, 1), diag(3) + matrix(.2, 3, 3)))
-y <- x$X1 + x$X2 + x$X3^2
-l <- lm(y ~ X1 + X2 + X3, data=x)
-by1var.seq(l)
-
-by1var(l, "X1", thin=1)
-by1var(l, "X3")
-
-y <- rnorm(100, 10, 1)
-x <- exp(y) + rnorm(100, 1, 1)
-z <- rnorm(100, 1, 1)
-l <- lm(y ~ x + z)
-by1var.seq(l)
-
-
-pdf("test.pdf")
-by1var.seq(l)
-dev.off()
-
-l <- lm(mpg ~ wt + hp, data=mtcars)
-by1var(l, "wt")
-
-d <- read.csv('rts.csv')
-d$AgeSubjectNum <- as.numeric(d$AgeSubject)
-d$RTnaming.e = exp(d$RTnaming)
-l <- lm(RTnaming.e ~ AgeSubject + WrittenFrequency + LengthInLetters + Familiarity, data=d)
-by1var.seq(l, thin.val=.1, bub='AgeSubject')
+if (dotests) {
+  n = 80
+  x <- data.frame(rmvnorm(n, c(0, 0, 1), .5 * (diag(3) + matrix(.3, 3, 3))))
+  y <- x$X1 + 2*x$X2 + x$X3^2 + rnorm(n,0,.2)
+  l <- lm(y ~ X1 + X2 + X3, data=x)
+  by1var.seq(l)
+  
+  by1var(l, "X1", thin=1)
+  by1var(l, "X3")
+  
+  y <- rnorm(100, 10, 1)
+  x <- exp(y) + rnorm(100, 1, 1)
+  z <- rnorm(100, 1, 1)
+  l <- lm(y ~ x + z)
+  by1var.seq(l)
+  
+  
+  pdf("test.pdf")
+  by1var.seq(l)
+  dev.off()
+  
+  l <- lm(mpg ~ wt + hp, data=mtcars)
+  by1var(l, "wt")
+  
+  d <- read.csv('rts.csv')
+  d$AgeSubjectNum <- as.numeric(d$AgeSubject)
+  d$RTnaming.e = exp(d$RTnaming)
+  l <- lm(RTnaming.e ~ AgeSubject + WrittenFrequency + LengthInLetters + Familiarity, data=d)
+  by1var.seq(l, thin=.1, breakupby='AgeSubject')
+}
