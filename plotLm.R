@@ -110,10 +110,11 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
       bothData[, varName] = as.factor(bothData[, varName])
       p <- ggplot(data=bothData[bothData$gp_ %in% sampled.data, ], aes_string(y=toString(outcomeVar),x=varName ))+
         geom_boxplot(color="black", data=subset(bothData,tp_ == "raw"), alpha=.3)+
-           geom_boxplot(color="red", data=subset(bothData,tp_ == "adj")) + geom_line(aes(group=gp_), alpha=0.3)+
-           geom_smooth(method=lm,data=subset(bothData,tp_ == "adj"), color="red", fill='red', alpha=.3, se=F)+
-           geom_smooth(data=subset(bothData,tp_ == "adj"), size=0, fill = 'blue', color = 'blue', alpha=.2, se=T)+
-           geom_rug(aes(y=residOfFull),data=subset(bothData,tp_ == "adj"),col=rgb(.5,0,0,alpha=.2)) + 
+           call.with(geom_boxplot,list(data=subset(bothData,tp_ == "adj")),adjustedData) + 
+           call.with(geom_line,list(aes(group=gp_)),rawData) +
+           call.with(geom_smooth,list(method=lm,data=subset(bothData,tp_ == "adj")),line)+
+           call.with(geom_smooth,list(data=subset(bothData,tp_ == "adj")),loess)+
+           call.with(geom_rug,list(aes(y=residOfFull),data=subset(bothData,tp_ == "adj")),rug)+
            theme_bw() + facet_grid(. ~ breakupby) + ggtitle(title.val) + theme(plot.title = element_text(size=10, hjust=1))
   }
   
@@ -163,7 +164,22 @@ by1var.seq <- function(l, ...) {
 
 #tests
 if (dotests) {
-  
+  if (F) {
+    for (i in 35:45) {
+      set.seed(i)
+      n = 80
+      x <- data.frame(rmvnorm(n, c(0, 0, 1), .6 * (diag(3) + matrix(.3, 3, 3))))
+      x$X4 <- c(rep(1, n/2), rep(0, n/2))
+      y <- x$X1 + 2*x$X2 + 1.2*x$X3^2 + rnorm(n,0,.2) + rnorm(n, x$X4, 1)
+      x$X4 <- as.factor(x$X4)
+      l <- lm(y ~ X1 + X2 + X3 + X4 , data=x)
+      
+      par(mfrow = c(2,2))
+      plot(l)
+      par(mfrow = c(1,1))
+      gginc(1:2,by1var(l, "X3", adjustedData=stages(NULL,F), connection=stages(NULL,F), rawData=stages(list(),F), line=stages(NULL,F), loess=stages(NULL,F),rug=stages(list(alpha=0),F)))
+    }
+  }
   
   n = 160
   x <- data.frame(rmvnorm(n, c(0, 0, 1), .5 * (diag(3) + matrix(.3, 3, 3))))
