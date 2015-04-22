@@ -19,7 +19,7 @@ n = 80
 x <- data.frame(rmvnorm(n, c(0, 0, 1), .5 * (diag(3) + matrix(.3, 3, 3))))
 y <- x$X1 + 2*x$X2 + x$X3^2 + rnorm(n,0,.2)
 l <- lm(y ~ X1 + X2 + X3, data=x)
-gginc(1:2,by1var.seq(l, adjustedData=stages(list(),F), connection=stages(list(),F), rawData=stages(list(),F), line=stages(list(),F), loess=stages(list(),F),rug=stages(list(),F)))
+gginc(1:2,by1var.seq(l, adjustedData=stages(list(alpha=0),F), connection=stages(list(alpha=0),F), rawData=stages(list(),F), line=stages(list(alpha=0),F), loess=stages(list(alpha=0),F),rug=stages(list(alpha=0),F)))
 
 ```
 
