@@ -35,7 +35,7 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
   
   
   varName <- var
-  print(varName)
+  #print(varName)
   outcomeVar = attributes(terms(formula(oldLm)))$variables[2]
   varAsFormula = reformulate(termlabels=varName,intercept=FALSE)
   if (varName == breakupby) {breakupby=FALSE}
@@ -85,7 +85,7 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
   
   title.vars = new.data[1, names(newLm$model)]
   title.vars = title.vars[names(title.vars) %in% breakupby == F & names(title.vars) != toString(outcomeVar)]
-  title.val = "holding constant...\n"
+  title.val = "Linear adjustment to values...\n"
   for (i in 1:length(title.vars)) {
     title.val = paste(title.val, names(title.vars[i]), ": ", round(title.vars[i], 2), "\n", sep="")
   }

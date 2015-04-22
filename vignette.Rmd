@@ -11,27 +11,33 @@ output:
 source('plotLm.R')
 library(rmarkdown)
 ```
+# Standart lm diagnotic plots
 
-# Look at this
+Say we have some 80 data points that we with to model using $y \sim X1 + X2 + X3$. Here are the resulting diagnostic plots:
 
 ```{r, results='asis', fig.height=5, fig.width=5, warning=F, message=F, echo=F}
 n = 80
 x <- data.frame(rmvnorm(n, c(0, 0, 1), .5 * (diag(3) + matrix(.3, 3, 3))))
 y <- x$X1 + 2*x$X2 + x$X3^2 + rnorm(n,0,.2)
 l <- lm(y ~ X1 + X2 + X3, data=x)
-gginc(1:2,by1var.seq(l, adjustedData=stages(list(alpha=0),F), connection=stages(list(alpha=0),F), rawData=stages(list(),F), line=stages(list(alpha=0),F), loess=stages(list(alpha=0),F),rug=stages(list(alpha=0),F)))
+plot(l)
+```
+
+# Can we do better?
+
+```{r, results='asis', fig.height=5, fig.width=5, warning=F, message=F, echo=F}
+gginc(1:2,by1var.seq(l, adjustedData=stages(NULL,F), connection=stages(NULL,F), rawData=stages(list(),F), line=stages(NULL,F), loess=stages(NULL,F),rug=stages(list(alpha=0),F)))
 
 ```
 
-#now this
 ```{r, fig.height=10, fig.width=10, warning=F, message=F}
-d <- read.csv('rts.csv')
-d$AgeSubjectNum <- as.numeric(d$AgeSubject)
-d$RTlexdec.e = exp(d$RTlexdec)
+#d <- read.csv('rts.csv')
+#d$AgeSubjectNum <- as.numeric(d$AgeSubject)
+#d$RTlexdec.e = exp(d$RTlexdec)
 #d$LengthInLetters <- scale(d$LengthInLetters)[, 1]
-l <- lm(RTnaming ~ AgeSubject + WrittenFrequency + LengthInLetters + Familiarity, data=d)
-by1var.seq(l, thin=.2, breakupby='AgeSubject')
-by1var.seq(l, thin=.2, breakupby='LengthInLetters')
+#l <- lm(RTnaming ~ AgeSubject + WrittenFrequency + LengthInLetters + Familiarity, data=d)
+#by1var.seq(l, thin=.2, breakupby='AgeSubject')
+#by1var.seq(l, thin=.2, breakupby='LengthInLetters')
 
 ```
 
