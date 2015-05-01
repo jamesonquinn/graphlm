@@ -11,9 +11,39 @@ source('plotLm.R')
 library(rmarkdown)
 ```
 
+# Introduction
+
+Perhaps the most common statistical model is linear regression. Often, we want to fit a linear model to data and then evaluate and modify that model. The way that R does that by default, however, is not always as useful as it could be. The plotLm function provides a way to make plotting and evaluating regression models easy and effective.
+
+To demonstrate the features of plotLm, we will first generate some data and show how it is handled by R's default linear regression plotting software. 
+
+```{r}
+set.seed(43)
+n = 80
+x <- data.frame(rmvnorm(n, c(0, 0, 1), .6 * (diag(3) + matrix(.3, 3, 3))))
+x$X4 <- c(rep(1, n/2), rep(0, n/2))
+y <- x$X1 + 2*x$X2 + 1.2*x$X3^2 + rnorm(n,0,.2) + rnorm(n, x$X4, 1)
+x$X4 <- as.factor(x$X4)
+l <- lm(y ~ X1 + X2 + X3 + X4 , data=x)
+par(mfrow = c(2,2))
+plot(l)
+par(mfrow = c(1,1))
+```
+
+Now let's instead use plotLm.
+
+To run plotLm, we run `by1var` and pass the linear model as an argument along with the variable of interest. Effectively, plotLm will plot the variable of interest against the dependent measure. The gray dots represent the actual data, whereas the red dots are the residuals of the model while holding all non-critical predictors constant.
+
+
+```{r, results='asis', fig.height=6, fig.width=7, warning=F, message=F, echo=F}
+gginc(1:2,by1var(l, "X3", adjustedData=stages(NULL,F), connection=stages(NULL,F), rawData=stages(list(),F), line=stages(NULL,F), loess=stages(NULL,F),rug=stages(list(alpha=0),F)))
+
+```
+
+
 # Language data
 
-Let's see how plotLM works with a real data set of interest. We'll use some language data on reading times, from the LanguageR package.
+Let's see how plotLm works with a real data set of interest. We'll use some language data on reading times, from the LanguageR package.
 
 First, we load the data and get the columns we want.
 
