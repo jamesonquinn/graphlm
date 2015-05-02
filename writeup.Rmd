@@ -6,16 +6,17 @@ output: html_document
 ---
 
 ```{r, include=F}
-knitr::opts_chunk$set(message=F, warning=F, error=F, fig.width=9, fig.height=9)
+knitr::opts_chunk$set(message=F, warning=F, error=F, fig.width=7, fig.height=7)
 source('plotLm.R')
 library(rmarkdown)
+library(mvtnorm)
 ```
 
 # Introduction
 
 Perhaps the most common statistical model is linear regression. Often, we want to fit a linear model to data and then evaluate and modify that model. The way that R does that by default, however, is not always as useful as it could be. The plotLm function provides a way to make plotting and evaluating regression models easy and effective.
 
-To demonstrate the features of plotLm, we will first generate some data and show how it is handled by R's default linear regression plotting software. 
+To demonstrate the features of plotLm, we will first generate some data and show how it is handled by R's default linear regression plotting software. We'll generate data with four predictors.
 
 ```{r}
 set.seed(43)
@@ -30,15 +31,35 @@ plot(l)
 par(mfrow = c(1,1))
 ```
 
+What do we learn from these plots? The Residuals vs Fitted one is probably the most commonly used. We see that the residuals seem to show an uptick on the end, but is that a problem with our model or just noise? Hard to know.
+
+The Normal Q-Q plot is also useful sometimes, but it's not what we really want.
+
+In our experience, the other two default lm plots are rarely used.
+
+What do we conclude from these plots? Well, it looks like the linear fit is not terrible. Maybe there are some problems with the model fit at the lower and upper end of the x-axis, but it's hard to know for sure.
+
+## PlotLm
+
 Now let's instead use plotLm.
 
 To run plotLm, we run `by1var` and pass the linear model as an argument along with the variable of interest. Effectively, plotLm will plot the variable of interest against the dependent measure. The gray dots represent the actual data, whereas the red dots are the residuals of the model while holding all non-critical predictors constant.
 
 
-```{r, results='asis', fig.height=6, fig.width=7, warning=F, message=F, echo=F}
-gginc(1:2,by1var(l, "X3", adjustedData=stages(NULL,F), connection=stages(NULL,F), rawData=stages(list(),F), line=stages(NULL,F), loess=stages(NULL,F),rug=stages(list(alpha=0),F)))
-
+```{r, results='asis', fig.height=6, fig.width=7, warning=F, message=F, echo=T}
+by1var.seq(l)
 ```
+
+For example, the plot in the top left (X1) shows raw X1 against the dependent variable y in black dots. The red dots are the residuals (shifted up to be centered around the mean) for a model holding X2, X3, and X4 constant at the values stated under "holding constant...". 
+
+Plotting the data this way lets us quickly and easily see that X3 does not have a simple linear relationship with y. The residuals are clearly not on the red line of best fit.
+
+We can look at just that variable using by1var:
+
+```{r, results='asis', fig.height=6, fig.width=7, warning=F, message=F, echo=T}
+by1var(l, "X3")
+```
+
 
 
 # Language data
@@ -56,14 +77,14 @@ d <- select(d, RTnaming, Familiarity, Word, AgeSubject, WordCategory, WrittenFre
 
 The measure of interest is `RTnaming`, which is a measure of the latency in ms of how long a participant takes to say a word out loud. Here, we have data aggregated by word.
 
-Let's say we want to investigate the effects of `AgeSubject`, `WrittenFrequency`, and `LengthInLetters` in a linear model.
+Let's say we want to investigate the effects of `AgeSubject` (young or old subjects), `WrittenFrequency`, and `LengthInLetters` in a linear model. All of these are known to affect hte reaction time.
 
 ```{r}
 ###first pass
 l <- lm(RTnaming ~ AgeSubject + WrittenFrequency + LengthInLetters , data=d)
 ```
 
-To plot this data using plotLM, we just use the `by1var.seq` function.
+To plot this data using plotLM, we just use the `by1var.seq` function. 
 
 ```{r}
 by1var.seq(l)
@@ -92,7 +113,11 @@ by1var.seq(l, thin=.1, breakupby='AgeSubject')
 Now we can see each factor separately, while holding the others constant.
 
 
+# Thoughts on the project
 
+Doing this project allowed us to reflect on many of the themes of the course. It quickly became apparent that it's not trivial making a package that allows for easy plotting of linear regression models since, for any given problem, the GOALS may be quite different. For instance, in our current plotLm package, we can easily visualize residuals when holding other factors constant. But what happens if those residuals differ a lot based on the value of the other predictors? In future versions, it might be nice to be able to change the value at whic the held-constant predictors are held constant. Also, it would be useful to be able to handle interactions.
+
+What if our goal was to see whether a particular predictor X2 explains variance not explained by a correlated predictor X1? That is, we need to decide whether to include X1 in our model. This plotting package is not ideal for that since, at any given time, it varies only one predictor. So it's hard to see how much variance is being explained by X2 that's not being explained by X1.
 
 
 
