@@ -16,7 +16,7 @@ library(mvtnorm)
 
 Perhaps the most common statistical model is linear regression. Often, we want to fit a linear model to data and then evaluate and modify that model. The way that R does that by default, however, is not always as useful as it could be. The plotLm function provides a way to make plotting and evaluating regression models easy and effective.
 
-To demonstrate the features of plotLm, we will first generate some data and show how it is handled by R's default linear regression plotting software. We'll generate data with four predictors.
+To demonstrate the features of plotLm, we will first generate some data and show how it is handled by R's default linear regression plotting software. We'll generate data with four predictors (X1-X4) and a dependant variable y.
 
 ```{r}
 set.seed(43)
@@ -33,17 +33,17 @@ par(mfrow = c(1,1))
 
 What do we learn from these plots? The Residuals vs Fitted one is probably the most commonly used. We see that the residuals seem to show an uptick on the end, but is that a problem with our model or just noise? Hard to know.
 
-The Normal Q-Q plot is also useful sometimes, but it's not what we really want.
+The Normal Q-Q plot is also useful sometimes for assessing normality, but it's not what we really want here. 
 
 In our experience, the other two default lm plots are rarely used.
 
-What do we conclude from these plots? Well, it looks like the linear fit is not terrible. Maybe there are some problems with the model fit at the lower and upper end of the x-axis, but it's hard to know for sure.
+What do we conclude? Well, it looks like the linear fit is not terrible. Maybe there are some problems with the model fit at the lower and upper end of the x-axis, but it's hard to know for sure.
 
 ## PlotLm
 
 Now let's instead use plotLm.
 
-To run plotLm, we run `by1var` and pass the linear model as an argument along with the variable of interest. Effectively, plotLm will plot the variable of interest against the dependent measure. The gray dots represent the actual data, whereas the red dots are the residuals of the model while holding all non-critical predictors constant.
+To run plotLm, we run `by1var` and pass the linear model as an argument along with the variable of interest. Effectively, plotLm will plot the variable of interest against the dependent measure. The gray dots represent the actual data, whereas the red dots are the residuals of a reduced model while a) holding out the critical predictor, b) holding all non-critical predictors constant and c) shifting the residuals up by a constant factor.
 
 
 ```{r, results='asis', fig.height=6, fig.width=7, warning=F, message=F, echo=T}
@@ -54,7 +54,9 @@ For example, the plot in the top left (X1) shows raw X1 against the dependent va
 
 Plotting the data this way lets us quickly and easily see that X3 does not have a simple linear relationship with y. The residuals are clearly not on the red line of best fit.
 
-We can look at just that variable using by1var:
+Note that, when a variable is categorical, plotLm will try to detect that and will use boxplots insead of a scatter plot for that variable. The red and black boxes have the same interpretation as the red and black dots.
+
+We can look at just that variable using the simple command `by1var`:
 
 ```{r, results='asis', fig.height=6, fig.width=7, warning=F, message=F, echo=T}
 by1var(l, "X3")
@@ -64,9 +66,10 @@ by1var(l, "X3")
 
 # Language data
 
-Let's see how plotLm works with a real data set of interest. We'll use some language data on reading times, from the LanguageR package.
+Let's see how plotLm works with a real data set of interest. We'll use some language data on latency times, from the LanguageR package. The way these are obtained is by having subjects read words and measuring how long it takes from a) the time the word appears to b) the time the word starts being said. 
 
 First, we load the data and get the columns we want.
+
 
 ```{r}
 d <- read.csv('rts.csv')
@@ -113,11 +116,13 @@ by1var.seq(l, thin=.1, breakupby='AgeSubject')
 Now we can see each factor separately, while holding the others constant.
 
 
-# Thoughts on the project
+# Thoughts and limitations
 
 Doing this project allowed us to reflect on many of the themes of the course. It quickly became apparent that it's not trivial making a package that allows for easy plotting of linear regression models since, for any given problem, the GOALS may be quite different. For instance, in our current plotLm package, we can easily visualize residuals when holding other factors constant. But what happens if those residuals differ a lot based on the value of the other predictors? In future versions, it might be nice to be able to change the value at whic the held-constant predictors are held constant. Also, it would be useful to be able to handle interactions.
 
 What if our goal was to see whether a particular predictor X2 explains variance not explained by a correlated predictor X1? That is, we need to decide whether to include X1 in our model. This plotting package is not ideal for that since, at any given time, it varies only one predictor. So it's hard to see how much variance is being explained by X2 that's not being explained by X1.
+
+In terms of statistical communication, these plots are useful to both the user and to other collaborators in that they can provide a standardized way of looking at regression residuals. At the same time, we recognize that using a default package like this will never work in every situation since every model is unique and may well have different goals. 
 
 
 
