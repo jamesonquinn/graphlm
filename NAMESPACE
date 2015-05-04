@@ -2,4 +2,4 @@
 
 export(by1var)
 export(by1var.seq)
-export(graphml)
+export(graphlm)

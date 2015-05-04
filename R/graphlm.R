@@ -225,7 +225,7 @@ find.cat.variables <- function(oldLm, varName) {
 #'
 #' This function takes a linear model and creates a plots for each variable.
 #' 
-#' @param l   Linear model to diagnose
+#' @param theModel   Linear model to diagnose
 #' @param var  string giving name of variable to plot on x. Must be an 
 #'   independent variable of the given linear model.
 #' @param thin   How much to thin the data (to avoid overdense plots)
@@ -251,7 +251,7 @@ by1var.seq <- function(theModel, ...) {
 #'
 #' This function takes a linear model and creates a plots for each variable.
 #' 
-#' @param l   Linear model to diagnose
+#' @param theModel   Linear model to diagnose
 #' @param var  string giving name of variable to plot on x. Must be an 
 #'   independent variable of the given linear model.
 #' @param thin   How much to thin the data (to avoid overdense plots)
@@ -264,7 +264,7 @@ by1var.seq <- function(theModel, ...) {
 #' @param rug   ggplot graphical parameters for marginal rug plot
 #' 
 #' @export
-graphml = by1var.seq
+graphlm = by1var.seq
 
 #tests
 if (dotests) {

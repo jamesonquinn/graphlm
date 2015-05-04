@@ -7,7 +7,7 @@
 by1var.seq(theModel, ...)
 }
 \arguments{
-\item{l}{Linear model to diagnose}
+\item{theModel}{Linear model to diagnose}
 
 \item{var}{string giving name of variable to plot on x. Must be an
 independent variable of the given linear model.}
