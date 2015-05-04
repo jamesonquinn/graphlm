@@ -1,7 +1,6 @@
 #' Better diagnostic plots for linear models
 #' @export
 #' @name graphml
-#' @doctype package
 #'
 #' This package makes improved diagnostic plots for linear models.
 #' 
@@ -80,12 +79,17 @@ call.with = function(f,fixedArgs,varArgs,elseResult=geom_blank()) {
 #' @param oldLm   Linear model to diagnose
 #' @param var  string giving name of variable to plot on x. Must be an 
 #'   independent variable of the given linear model.
-#' @param thin   Linear model to diagnose
+#' @param thin   How much to thin the data (to avoid overdense plots)
+#' @param breakupby   A categorical variable on which to break into multiple plots
+#' @param adjustedData   ggplot graphical parameters for the "red" dots
+#' @param rawData   ggplot graphical parameters for the "gray" dots
+#' @param adjustedData   ggplot graphical parameters for the "red" dots
+#' @param loess   ggplot graphical parameters for the fitted loess
+#' @param line   ggplot graphical parameters for the linear fit line
+#' @param rug   ggplot graphical parameters for marginal rug plot
+#' 
+#' 
 #'
-#' If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
-#' then plot 1 will go in the upper left, 2 will go in the upper right, and
-#' 3 will go all the way across the bottom.
-#
 by1var = function(oldLm, var, thin=1, breakupby=FALSE, 
                   adjustedData=F, 
                   rawData=F,
@@ -223,10 +227,29 @@ find.cat.variables <- function(oldLm, varName) {
   return(cat.variables)
 }
 
-by1var.seq <- function(l, ...) {
+
+#' Diagnostic plot of all variables of a linear model
+#'
+#' This function takes a linear model and creates a plots for each variable.
+#' 
+#' @param l   Linear model to diagnose
+#' @param var  string giving name of variable to plot on x. Must be an 
+#'   independent variable of the given linear model.
+#' @param thin   How much to thin the data (to avoid overdense plots)
+#' @param breakupby   A categorical variable on which to break into multiple plots
+#' @param adjustedData   ggplot graphical parameters for the "red" dots
+#' @param rawData   ggplot graphical parameters for the "gray" dots
+#' @param adjustedData   ggplot graphical parameters for the "red" dots
+#' @param loess   ggplot graphical parameters for the fitted loess
+#' @param line   ggplot graphical parameters for the linear fit line
+#' @param rug   ggplot graphical parameters for marginal rug plot
+#' 
+#' 
+#'
+by1var.seq <- function(theModel, ...) {
   p.list <- list()
-  vars <- names(l$model)[2:length(names(l$model))]
-  for (i in 1:length(vars)) { p <- by1var(l, vars[i], ...)
+  vars <- names(theModel$model)[2:length(names(theModel$model))]
+  for (i in 1:length(vars)) { p <- by1var(theModel, vars[i], ...)
                               p.list[[i]] <- p}
   multiplot(plotlist=p.list, cols = 2)
 }
