@@ -252,8 +252,7 @@ by1var.seq <- function(theModel, ...) {
 #' This function takes a linear model and creates a plots for each variable.
 #' 
 #' @param theModel   Linear model to diagnose
-#' @param var  string giving name of variable to plot on x. Must be an 
-#'   independent variable of the given linear model.
+#' @param var  string giving name of variable to plot on x. Must be an independent variable of the given linear model.
 #' @param thin   How much to thin the data (to avoid overdense plots)
 #' @param breakupby   A categorical variable on which to break into multiple plots
 #' @param adjustedData   ggplot graphical parameters for the "red" dots

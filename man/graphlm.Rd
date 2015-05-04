@@ -9,8 +9,7 @@ graphlm(theModel, ...)
 \arguments{
 \item{theModel}{Linear model to diagnose}
 
-\item{var}{string giving name of variable to plot on x. Must be an
-independent variable of the given linear model.}
+\item{var}{string giving name of variable to plot on x. Must be an independent variable of the given linear model.}
 
 \item{thin}{How much to thin the data (to avoid overdense plots)}
 
