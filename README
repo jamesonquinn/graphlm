@@ -1,0 +1,13 @@
+This is a package for improved diagnostic plots of linear models.
+
+# Installation
+
+```
+install.packages("devtools")
+
+library(devtools)
+
+dev_mode(on=T)
+
+install_github("graphlm","jamesonquinn")
+```
