@@ -7,8 +7,12 @@ output: html_document
 
 ```{r, include=F}
 knitr::opts_chunk$set(message=F, warning=F, error=F, fig.width=7, fig.height=7)
-source('plotLm.R')
+library(devtools)
+install_github("graphlm","jamesonquinn")
 library(rmarkdown)
+library(mvtnorm)
+library(data.table)
+library(dplyr)
 library(mvtnorm)
 ```
 
@@ -33,7 +37,7 @@ par(mfrow = c(1,1))
 
 What do we learn from these plots? The Residuals vs Fitted one is probably the most commonly used. We see that the residuals seem to show an uptick on the end, but is that a problem with our model or just noise? Hard to know.
 
-The Normal Q-Q plot is also useful sometimes for assessing normality, but it's not what we really want here. 
+The Normal Q-Q plot is also useful sometimes for assessing normality, but it's not what we really want here. In general, linear models are pretty robust to non-normality, so we generally don't pay too much attention to this plot, unless it's badly wrong.
 
 In our experience, the other two default lm plots are rarely used.
 
@@ -46,8 +50,14 @@ Now let's instead use plotLm.
 To run plotLm, we run `by1var` and pass the linear model as an argument along with the variable of interest. Effectively, plotLm will plot the variable of interest against the dependent measure. The gray dots represent the actual data, whereas the red dots are the residuals of a reduced model while a) holding out the critical predictor, b) holding all non-critical predictors constant and c) shifting the residuals up by a constant factor.
 
 
+
+
+
+
+
+
 ```{r, results='asis', fig.height=6, fig.width=7, warning=F, message=F, echo=T}
-by1var.seq(l)
+graphlm::by1var.seq(l)
 ```
 
 For example, the plot in the top left (X1) shows raw X1 against the dependent variable y in black dots. The red dots are the residuals (shifted up to be centered around the mean) for a model holding X2, X3, and X4 constant at the values stated under "holding constant...". 
@@ -59,7 +69,7 @@ Note that, when a variable is categorical, plotLm will try to detect that and wi
 We can look at just that variable using the simple command `by1var`:
 
 ```{r, results='asis', fig.height=6, fig.width=7, warning=F, message=F, echo=T}
-by1var(l, "X3")
+graphlm::by1var(l, "X3")
 ```
 
 
@@ -90,7 +100,7 @@ l <- lm(RTnaming ~ AgeSubject + WrittenFrequency + LengthInLetters , data=d)
 To plot this data using plotLM, we just use the `by1var.seq` function. 
 
 ```{r}
-by1var.seq(l)
+graphlm::by1var.seq(l)
 ```
 
 We notice something right away: we should take the log of frequency. Let's do that and refit the model.
@@ -98,19 +108,19 @@ We notice something right away: we should take the log of frequency. Let's do th
 ```{r}
 d$WrittenFrequency.log <- log(d$WrittenFrequency)
 l <- lm(RTnaming ~ AgeSubject + WrittenFrequency.log + LengthInLetters , data=d)
-by1var.seq(l)
+graphlm::by1var.seq(l)
 ```
 
 It's still hard to visualize, so we will try thinning the data. This will not affect the model or the lines of fit shown on the plot. It will just plot fewer data points. To do that, we pass `thin=.1` to the function. This effectively lets us look at 10% of the data.
 
 ```{r}
-by1var.seq(l, thin=.1)
+graphlm::by1var.seq(l, thin=.1)
 ```
 
 Now we see that we should use the `breakupby` function, which allows us to split a factor of our choice into facets. Here, we do that for `AgeSubject`, which is clearly causing a bimodal distribution.
 
 ```{r}
-by1var.seq(l, thin=.1, breakupby='AgeSubject')
+graphlm::by1var.seq(l, thin=.1, breakupby='AgeSubject')
 ```
 
 Now we can see each factor separately, while holding the others constant.

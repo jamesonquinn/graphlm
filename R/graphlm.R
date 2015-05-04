@@ -89,7 +89,8 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
                   connections=F, 
                   loess=F,
                   line=F,
-                  rug=F
+                  rug=F,
+                  debug=F
                   ) {
   
   #set up defaults
@@ -102,9 +103,11 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
   
   
   varName <- var
-  print(varName)
+  if (debug) {print(varName)}
   outcomeVar = attributes(terms(formula(oldLm)))$variables[2]
+  if (debug) {print(varName)}
   varAsFormula = reformulate(termlabels=varName,intercept=FALSE)
+  if (debug) {print(varName)}
   if (varName == breakupby) {breakupby=FALSE}
   #find if varName is a factor
   if (typeof(oldLm$model[, varName]) == "integer") {isfactor = TRUE} else {isfactor = FALSE}
@@ -112,6 +115,7 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
   cat.variables.old = find.cat.variables(oldLm, varName)
   
   newLm = lm(formula(oldLm) - varAsFormula, data=oldLm$model)
+  if (debug) {print("vv4")}
   cat.variables.new = find.cat.variables(newLm, varName)
 
   d1 = data.table(oldLm$model)
@@ -125,6 +129,7 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
       new.data3[T] = 0 
       new.data = cbind(new.data, new.data3) 
   }
+  if (debug) {print("vv4")}
   new.data[, varName] <-d1[, eval(as.symbol(varName))]
   d2 = new.data
   if (breakupby != FALSE) {d1[ ,means_:=mean(eval(as.symbol(toString(outcomeVar)))), by=eval(as.symbol(breakupby))]} else {
