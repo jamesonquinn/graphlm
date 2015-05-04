@@ -5,8 +5,8 @@ Version: 0.1
 Date: 2015-05-03
 Author: Kyle Mahowald and Jameson Quinn
 Maintainer: Jameson Quinn <jameson.quinn@gmail.com>
-Imports: scales (>=0.2.4),
-    ggplot2.
+Imports: scales (>= 0.2.4),
+    ggplot2,
     data.table,
     dplyr,
     gridExtra,
