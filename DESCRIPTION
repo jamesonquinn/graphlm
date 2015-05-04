@@ -1,0 +1,11 @@
+Package: graphlm
+Type: Package
+Title: Improved diagnostic plots for linear models
+Version: 1.0
+Date: 2015-05-03
+Author: Kyle Mahowald and Jameson Quinn
+Maintainer: Jameson Quinn <jameson.quinn@gmail.com>
+Description: In order to check the assumptions of a linear model, this
+	provides a function which graphs the residuals given all but one 
+	variable against that variable.
+License: MIT
