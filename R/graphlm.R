@@ -6,8 +6,6 @@ library(gridExtra)
 library(dplyr)
 library(mvtnorm)
 
-hgttihgthigtdihgdti()
-
 #' Multiple plot function
 #'
 #' ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
@@ -95,6 +93,7 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
                   debug=F
                   ) {
   
+  print("here is the function")
   #set up defaults
   if (identical(FALSE,adjustedData)) adjustedData=list(color="red")
   if (identical(FALSE,rawData)) rawData=list(alpha=0.3)
