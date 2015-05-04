@@ -103,7 +103,7 @@ by1var = function(oldLm, var, thin=1, breakupby=FALSE,
   
   
   varName <- var
-  if (debug) {print(varName)}
+  if (debug) {print("varName")}
   outcomeVar = attributes(terms(formula(oldLm)))$variables[2]
   if (debug) {print(varName)}
   varAsFormula = reformulate(termlabels=varName,intercept=FALSE)
