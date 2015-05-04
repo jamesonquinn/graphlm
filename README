@@ -1,6 +1,6 @@
 This is a package for improved diagnostic plots of linear models.
 
-#Installation
+# Installation
 
 ```install.packages("devtools")
 
